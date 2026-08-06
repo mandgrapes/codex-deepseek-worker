@@ -1,6 +1,6 @@
 {
   "name": "codex-deepseek-worker",
-  "version": "0.1.0+codex.20260806163008",
+  "version": "0.1.0+codex.20260806163353",
   "description": "Delegate implementation work to DeepSeek V4 Flash and let Codex review and verify the result.",
   "author": {
     "name": "Local developer"

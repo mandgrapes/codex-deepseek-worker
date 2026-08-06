@@ -212,21 +212,28 @@ if ($LASTEXITCODE -ne 0) {
     throw "Plugin installation failed."
 }
 
-$escapedScriptPath = $PSCommandPath.Replace("'", "''")
-$escapedBaseUrl = $BaseUrl.Replace("'", "''")
-$escapedModel = $Model.Replace("'", "''")
-$keyCommand = "& '$escapedScriptPath' -ConfigureApiKey -BaseUrl '$escapedBaseUrl' -Model '$escapedModel'"
-$encodedKeyCommand = ConvertTo-EncodedPowerShellCommand -Command $keyCommand
-$keyProcess = Start-Process -FilePath "powershell.exe" `
-    -ArgumentList @("-NoProfile", "-ExecutionPolicy", "Bypass", "-EncodedCommand", $encodedKeyCommand) `
-    -Wait -PassThru
-if ($keyProcess.ExitCode -ne 0) {
-    throw "API Key configuration did not complete."
-}
+$existingApiKey = [Environment]::GetEnvironmentVariable("DEEPSEEK_WORKER_API_KEY", "User")
+if ([string]::IsNullOrWhiteSpace($existingApiKey)) {
+    $escapedScriptPath = $PSCommandPath.Replace("'", "''")
+    $escapedBaseUrl = $BaseUrl.Replace("'", "''")
+    $escapedModel = $Model.Replace("'", "''")
+    $keyCommand = "& '$escapedScriptPath' -ConfigureApiKey -BaseUrl '$escapedBaseUrl' -Model '$escapedModel'"
+    $encodedKeyCommand = ConvertTo-EncodedPowerShellCommand -Command $keyCommand
+    $keyProcess = Start-Process -FilePath "powershell.exe" `
+        -ArgumentList @("-NoProfile", "-ExecutionPolicy", "Bypass", "-EncodedCommand", $encodedKeyCommand) `
+        -Wait -PassThru
+    if ($keyProcess.ExitCode -ne 0) {
+        throw "API Key configuration did not complete."
+    }
 
-if ([string]::IsNullOrWhiteSpace([Environment]::GetEnvironmentVariable("DEEPSEEK_WORKER_API_KEY", "User"))) {
-    throw "API Key was not saved."
+    if ([string]::IsNullOrWhiteSpace([Environment]::GetEnvironmentVariable("DEEPSEEK_WORKER_API_KEY", "User"))) {
+        throw "API Key was not saved."
+    }
 }
+else {
+    Write-Host "Existing API Key preserved." -ForegroundColor Green
+}
+$existingApiKey = $null
 
 Write-Host "Installation complete." -ForegroundColor Green
 Write-Host "Restart Codex, open a new thread, and enter: dsbro"

@@ -68,4 +68,8 @@
 
    > dsbro
 
+10. 告诉用户以后更新插件只需在 Codex 中输入：
+
+    > update_dsbro
+
 不要读取、回显、记录或提交用户的 API Key。

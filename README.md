@@ -30,4 +30,10 @@ powershell -ExecutionPolicy Bypass -File .\install.ps1
 
 `dsbro` 不区分大小写。之后该项目的实现任务默认考虑交给 DeepSeek，最终修改仍由 Codex 验收。旧口令“用 DeepSeek 当小弟”仍可使用。
 
+以后需要在其他机器更新插件，只需输入：
+
+> update_dsbro
+
+Codex 会从私有仓库拉取并重装最新版，已有 API Key 不会被显示或覆盖。更新后重启 Codex 并开启新对话。
+
 详细设计见 [CODEX_DEEPSEEK_PLUGIN_MVP.md](CODEX_DEEPSEEK_PLUGIN_MVP.md)。

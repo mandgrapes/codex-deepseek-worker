@@ -156,6 +156,7 @@ MVP 不包含：
 
 - 插件可被 Codex 正常加载。
 - 输入 `dsbro` 后，项目 `AGENTS.md` 会保存启用规则；旧口令“用 DeepSeek 当小弟”继续作为兼容别名。
+- 输入 `update_dsbro` 后，Codex 会从私有仓库更新并重装插件，同时保留已有 API Key。
 - 后续普通项目任务无需再次指定 DeepSeek。
 - Codex 能按技能说明调用 PowerShell 脚本。
 - 使用有效 API Key 时能得到结构化补丁结果。

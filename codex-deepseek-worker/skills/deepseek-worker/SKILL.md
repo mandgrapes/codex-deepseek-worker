@@ -1,6 +1,6 @@
 ---
 name: deepseek-worker
-description: Delegate implementation work to DeepSeek V4 Flash through an OpenAI-compatible Chat Completions API, then have Codex review, apply, and test the returned patch. Use when the user says "dsbro" (case-insensitive), uses the legacy phrase "用 DeepSeek 当小弟", asks to enable DeepSeek as the default worker for a project, explicitly requests DeepSeek delegation, or when a project AGENTS.md activates this skill for implementation tasks.
+description: Delegate implementation work to DeepSeek V4 Flash through an OpenAI-compatible Chat Completions API, then have Codex review, apply, and test the returned patch. Use when the user says "dsbro" (case-insensitive), says "update_dsbro" to update this plugin, uses the legacy phrase "用 DeepSeek 当小弟", asks to enable DeepSeek as the default worker for a project, explicitly requests DeepSeek delegation, or when a project AGENTS.md activates this skill for implementation tasks.
 ---
 
 # DeepSeek Worker
@@ -24,6 +24,17 @@ Use `$codex-deepseek-worker:deepseek-worker` by default for implementation tasks
 
 3. Preserve all unrelated `AGENTS.md` content.
 4. Stop after confirming project mode is enabled unless the user also gave a concrete task.
+
+## Update the plugin
+
+When the user sends `update_dsbro` as a standalone command (case-insensitive):
+
+1. Use the standard repository path `%LOCALAPPDATA%\Codex\marketplaces\codex-deepseek-worker`.
+2. If it already exists, verify that it is a Git repository whose `origin` points to `mandgrapes/codex-deepseek-worker`. Do not update or delete an unrelated directory.
+3. If it is absent, verify GitHub CLI authentication and clone the private repository `mandgrapes/codex-deepseek-worker` to that path.
+4. Run the repository's `install.ps1`. It pulls with `--ff-only`, refreshes the marketplace registration, and reinstalls the plugin. An existing `DEEPSEEK_WORKER_API_KEY` is preserved without being displayed or overwritten.
+5. Verify with `codex plugin list` that `codex-deepseek-worker` is `installed, enabled`.
+6. Report the installed version and ask the user to restart Codex and open a new thread. Do not perform project implementation work in the update turn unless separately requested.
 
 ## Delegate a task
 
