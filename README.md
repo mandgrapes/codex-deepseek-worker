@@ -1,6 +1,6 @@
 # dsbro — DeepSeek worker for Codex
 
-`dsbro` lets the main Codex agent assign implementation work to a DeepSeek V4 Flash Codex thread. The plugin launches Codex's built-in MCP server under a dedicated DeepSeek profile. The worker uses the normal Codex prompt, project instructions, repository tools, shell, patch tool, sandbox, and local session history. The main Codex agent reviews the diff and runs tests.
+`dsbro` lets the main Codex agent assign implementation work to a DeepSeek V4 Flash Codex thread. The plugin launches Codex's built-in MCP server with native provider configuration overrides. The worker uses the normal Codex prompt, project instructions, repository tools, shell, patch tool, sandbox, and local session history. The main Codex agent reviews the diff and runs tests.
 
 The worker thread is persistent and resumable. DeepSeek does not store a server-side conversation, but Codex stores the thread locally and reconstructs its context for follow-up turns.
 
@@ -16,7 +16,7 @@ Give [`给Codex安装.md`](给Codex安装.md) to Codex on the target machine, or
 powershell -ExecutionPolicy Bypass -File .\install.ps1
 ```
 
-The installer downloads or updates the public repository, installs the plugin, creates a dedicated DeepSeek Codex profile without changing the main Codex configuration, stores the key in the Windows user environment, and installs DeepSeek's official `deepseek-v4-flash` Codex metadata.
+The installer downloads or updates the public repository, installs the plugin without changing the main Codex configuration, stores the key in the Windows user environment, and installs DeepSeek's official `deepseek-v4-flash` Codex metadata.
 
 Restart Codex, open a project, and enter:
 

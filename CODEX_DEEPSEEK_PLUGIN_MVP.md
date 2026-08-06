@@ -6,9 +6,9 @@
 
 ## Architecture
 
-1. The installer creates a dedicated `~/.codex/dsbro.config.toml` profile containing the DeepSeek Responses provider and environment-key authentication; the main Codex configuration remains unchanged.
+1. The bundled MCP declaration starts `codex mcp-server` with native configuration overrides for the DeepSeek Responses provider; the main Codex configuration remains unchanged.
 2. It installs DeepSeek's official V4 Flash Codex model metadata at `~/.codex/dsbro-models.json`.
-3. The plugin bundles Codex's own `codex mcp-server`, launched with a dedicated DeepSeek profile.
+3. The plugin bundles Codex's own `codex mcp-server`, launched with the DeepSeek model and provider selected through Codex's native `-c` options.
 4. The worker reads and edits the project using Codex tools and the selected sandbox.
 5. Codex's native `codex-reply` tool continues the same local conversation.
 6. The parent Codex agent reviews the real diff and independently runs tests.

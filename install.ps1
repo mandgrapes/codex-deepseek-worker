@@ -123,23 +123,6 @@ function Install-NativeCodexConfiguration {
     Copy-Item -LiteralPath $catalogSource -Destination $catalogDestination -Force
     Get-Content -LiteralPath $catalogDestination -Raw -Encoding UTF8 | ConvertFrom-Json | Out-Null
 
-    $profilePath = Join-Path $codexDirectory "dsbro.config.toml"
-    $catalogProfilePath = $catalogDestination.Replace("\", "/").Replace('"', '\"')
-    $profileBaseUrl = $BaseUrl.Replace("\", "\\").Replace('"', '\"')
-    $profile = @"
-model = "$Model"
-model_provider = "deepseek"
-model_catalog_json = "$catalogProfilePath"
-
-[model_providers.deepseek]
-name = "deepseek"
-base_url = "$profileBaseUrl"
-wire_api = "responses"
-env_key = "DEEPSEEK_API_KEY"
-env_key_instructions = "Set DEEPSEEK_API_KEY in your Windows user environment"
-"@
-    [IO.File]::WriteAllText($profilePath, $profile.Trim() + "`r`n", [Text.UTF8Encoding]::new($false))
-
     $configPath = Join-Path $codexDirectory "config.toml"
     $config = if (Test-Path -LiteralPath $configPath) { Get-Content -LiteralPath $configPath -Raw -Encoding UTF8 } else { "" }
     if ($null -eq $config) { $config = "" }
@@ -155,7 +138,7 @@ env_key_instructions = "Set DEEPSEEK_API_KEY in your Windows user environment"
     if ($newConfig -ne $config) {
         [IO.File]::WriteAllText($configPath, $newConfig, [Text.UTF8Encoding]::new($false))
     }
-    Write-Host "Dedicated dsbro Codex profile configured; the main Codex configuration was preserved." -ForegroundColor Green
+    Write-Host "DeepSeek worker metadata configured; the main Codex configuration was preserved." -ForegroundColor Green
 }
 
 function Install-CodexPlugin {

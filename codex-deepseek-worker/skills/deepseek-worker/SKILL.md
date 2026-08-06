@@ -35,7 +35,7 @@ While the DeepSeek Codex MCP call is active, keep waiting. Latency or temporary 
 
 Call the bundled `dsbro` MCP server's `codex` tool. Give it the task, project root, `sandbox: "workspace-write"`, and `approval-policy: "never"`. The tool starts a persistent Codex conversation and returns its thread identifier.
 
-Do not invoke `codex exec`, `codex app-server`, the DeepSeek API, or a custom process manager. The bundled server is the official `codex mcp-server` command configured with the `dsbro` Codex profile.
+Do not invoke `codex exec`, `codex app-server`, the DeepSeek API, or a custom process manager. The bundled server directly launches the official `codex mcp-server` command with native configuration overrides for the DeepSeek provider.
 
 ## Wait for the worker
 
@@ -68,5 +68,4 @@ When the user sends `update_dsbro` as a standalone command:
 - Protocol: Responses API.
 - Credential: `DEEPSEEK_API_KEY` from the Windows user environment.
 - Model catalog: `~/.codex/dsbro-models.json` from DeepSeek's official Codex setup.
-- Codex profile: `~/.codex/dsbro.config.toml`.
 - The parent Codex model/provider is unchanged.
