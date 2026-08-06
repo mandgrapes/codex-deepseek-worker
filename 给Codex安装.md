@@ -1,57 +1,31 @@
-# Codex 执行说明：安装 DeepSeek Worker
+# 请 Codex 安装 dsbro
 
-请直接完成下面的安装任务，不要让用户手动复制仓库地址或输入安装命令。
+请在 Windows PowerShell 中完成下面操作。除 DeepSeek API Key 外，不要让我手动输入其他内容。
 
-## 目标
+1. 下载或更新公开仓库：
 
-从公开仓库 `https://github.com/mandgrapes/codex-deepseek-worker.git` 安装 Codex DeepSeek Worker，并配置模型 `deepseek-v4-flash`。
+   `https://github.com/mandgrapes/codex-deepseek-worker`
 
-## 执行规则
+2. 仓库目录固定为：
 
-- 这是 Windows 安装任务，请自主执行所需命令。
-- 遇到 Codex 权限确认时，让用户确认即可，然后继续执行。
-- 不要要求用户把 API Key 发到聊天中。
-- 需要 API Key 时，运行仓库里的 `install.ps1`；它会打开独立的安全输入窗口，由用户亲自输入。
-- 不需要安装 GitHub CLI，也不需要登录 GitHub。
-- 除 API Key 输入外，不要向用户询问其他配置，全部使用默认值。
-- 完成后检查插件状态，必须看到 `codex-deepseek-worker` 为 `installed, enabled` 才能报告成功。
+   `%LOCALAPPDATA%\Codex\marketplaces\codex-deepseek-worker`
 
-## 执行步骤
+3. 在仓库根目录运行：
 
-1. 检查 `codex` 和 `git` 命令。
-2. 如果缺少 Git，使用 Winget 安装：
+```powershell
+powershell -ExecutionPolicy Bypass -File .\install.ps1
+```
 
-   ```powershell
-   winget install --id Git.Git --exact --source winget --accept-package-agreements --accept-source-agreements
-   ```
+4. API Key 输入窗口出现时暂停，让我输入。输入内容不得显示、复制到聊天或写入仓库。
 
-3. 把公开仓库克隆到临时目录。目标目录如果已经存在，先确认它确实是本任务的旧临时目录，并核对 `origin` 后执行 `pull --ff-only`；不要删除其他目录：
+5. 安装完成后检查 `codex-deepseek-worker` 已安装并启用，然后只告诉我重启 Codex、打开项目并输入：
 
-   ```powershell
-   $workerBootstrap = Join-Path $env:TEMP "codex-deepseek-worker-bootstrap"
-   git clone https://github.com/mandgrapes/codex-deepseek-worker.git $workerBootstrap
-   ```
+```text
+dsbro
+```
 
-4. 运行仓库内的一文件安装器：
+以后更新只需在 Codex 中输入：
 
-   ```powershell
-   powershell -ExecutionPolicy Bypass -File (Join-Path $workerBootstrap "install.ps1")
-   ```
-
-5. 安装器会自动把正式副本安装到用户的本地应用数据目录、注册插件市场、安装插件，并弹出隐藏输入的 API Key 窗口。
-
-6. 安装完成后验证：
-
-   ```powershell
-   codex plugin list
-   ```
-
-7. 告诉用户重启 Codex、开启新对话，然后输入：
-
-   > dsbro
-
-8. 告诉用户以后更新插件只需在 Codex 中输入：
-
-    > update_dsbro
-
-不要读取、回显、记录或提交用户的 API Key。
+```text
+update_dsbro
+```

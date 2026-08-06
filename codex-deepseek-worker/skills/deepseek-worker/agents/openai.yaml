@@ -1,4 +1,4 @@
 interface:
-  display_name: "DeepSeek Worker"
-  short_description: "Delegate coding tasks to DeepSeek V4 Flash"
+  display_name: "dsbro"
+  short_description: "Native DeepSeek V4 Flash worker for Codex"
   default_prompt: "dsbro"

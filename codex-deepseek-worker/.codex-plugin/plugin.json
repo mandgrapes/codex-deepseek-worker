@@ -1,15 +1,15 @@
 {
   "name": "codex-deepseek-worker",
-  "version": "0.1.0+codex.20260806170021",
-  "description": "Delegate implementation work to DeepSeek V4 Flash and let Codex review and verify the result.",
+  "version": "0.1.0+codex.20260806172834",
+  "description": "Run DeepSeek V4 Flash as a native Codex worker sub-agent under Codex supervision.",
   "author": {
     "name": "Local developer"
   },
   "skills": "./skills/",
   "interface": {
     "displayName": "Codex DeepSeek Worker",
-    "shortDescription": "Use DeepSeek as a coding worker under Codex supervision.",
-    "longDescription": "Codex selects task context, calls DeepSeek V4 Flash for an implementation patch, then reviews, applies, and tests the result locally.",
+    "shortDescription": "Use DeepSeek as a native Codex worker sub-agent.",
+    "longDescription": "A project-scoped Codex worker uses DeepSeek V4 Flash through the Responses API, with normal Codex tools and sandboxing. The parent Codex agent reviews and verifies its work.",
     "developerName": "Local developer",
     "category": "Productivity",
     "capabilities": [],

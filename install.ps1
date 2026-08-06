@@ -1,69 +1,31 @@
 [CmdletBinding()]
 param(
     [switch]$ConfigureApiKey,
-
+    [switch]$SkipApiKeyPrompt,
     [string]$Repository = "mandgrapes/codex-deepseek-worker",
-
-    [string]$BaseUrl = "https://api.deepseek.com",
-
-    [string]$Model = "deepseek-v4-flash",
-
+    [string]$BaseUrl = "https://api.deepseek.com/",
     [string]$InstallDirectory = (Join-Path ([Environment]::GetFolderPath("LocalApplicationData")) "Codex\marketplaces\codex-deepseek-worker")
 )
 
 $ErrorActionPreference = "Stop"
+$Model = "deepseek-v4-flash"
 
 function ConvertTo-EncodedPowerShellCommand {
-    param(
-        [Parameter(Mandatory = $true)]
-        [string]$Command
-    )
-
-    return [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($Command))
+    param([Parameter(Mandatory = $true)][string]$Command)
+    [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($Command))
 }
 
-function Enable-GitCommand {
-    $gitCommand = Get-Command git -ErrorAction SilentlyContinue
-    if ($null -ne $gitCommand) {
-        return
-    }
-
-    $winget = Get-Command winget -ErrorAction SilentlyContinue
-    if ($null -eq $winget) {
-        throw "Git is missing and winget is unavailable. Install Git, then run this file again."
-    }
-
-    Write-Host "Installing Git..." -ForegroundColor Cyan
-    & $winget.Source install --id Git.Git --exact --source winget `
-        --accept-package-agreements --accept-source-agreements
-    if ($LASTEXITCODE -ne 0) {
-        throw "Git installation failed."
-    }
-
-    $gitCommandDirectory = Join-Path $env:ProgramFiles "Git\cmd"
-    $gitExecutable = Join-Path $gitCommandDirectory "git.exe"
-    if (-not (Test-Path -LiteralPath $gitExecutable)) {
-        throw "Git was installed but git.exe could not be found. Restart Windows and run this file again."
-    }
-
-    $env:Path = "$gitCommandDirectory;$env:Path"
-}
-
-function Set-DeepSeekUserSettings {
+function Set-DeepSeekApiKey {
     $secureKey = Read-Host "Enter DeepSeek API Key (input is hidden)" -AsSecureString
     $keyPointer = [IntPtr]::Zero
     $plainKey = $null
-
     try {
         $keyPointer = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($secureKey)
         $plainKey = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($keyPointer)
         if ([string]::IsNullOrWhiteSpace($plainKey)) {
-            throw "API Key cannot be empty. Run install.ps1 again."
+            throw "API Key cannot be empty."
         }
-
-        [Environment]::SetEnvironmentVariable("DEEPSEEK_WORKER_API_KEY", $plainKey, "User")
-        [Environment]::SetEnvironmentVariable("DEEPSEEK_WORKER_BASE_URL", $BaseUrl, "User")
-        [Environment]::SetEnvironmentVariable("DEEPSEEK_WORKER_MODEL", $Model, "User")
+        [Environment]::SetEnvironmentVariable("DEEPSEEK_API_KEY", $plainKey, "User")
     }
     finally {
         if ($keyPointer -ne [IntPtr]::Zero) {
@@ -72,109 +34,147 @@ function Set-DeepSeekUserSettings {
         $plainKey = $null
         $secureKey = $null
     }
+    Write-Host "DeepSeek API Key saved to the Windows user environment." -ForegroundColor Green
+}
 
-    Write-Host "API settings saved securely to Windows user environment variables." -ForegroundColor Green
-    Read-Host "Press Enter to close"
+function Ensure-DeepSeekApiKey {
+    $key = [Environment]::GetEnvironmentVariable("DEEPSEEK_API_KEY", "User")
+    if (-not [string]::IsNullOrWhiteSpace($key)) {
+        Write-Host "Existing DeepSeek API Key preserved." -ForegroundColor Green
+        return
+    }
+
+    $legacyKey = [Environment]::GetEnvironmentVariable("DEEPSEEK_WORKER_API_KEY", "User")
+    if (-not [string]::IsNullOrWhiteSpace($legacyKey)) {
+        [Environment]::SetEnvironmentVariable("DEEPSEEK_API_KEY", $legacyKey, "User")
+        Write-Host "Existing dsbro API Key migrated without displaying it." -ForegroundColor Green
+        $legacyKey = $null
+        return
+    }
+
+    if ($SkipApiKeyPrompt) {
+        Write-Warning "DEEPSEEK_API_KEY is not configured."
+        return
+    }
+
+    $escapedScriptPath = $PSCommandPath.Replace("'", "''")
+    $keyCommand = "& '$escapedScriptPath' -ConfigureApiKey"
+    $encoded = ConvertTo-EncodedPowerShellCommand -Command $keyCommand
+    $process = Start-Process -FilePath "powershell.exe" `
+        -ArgumentList @("-NoProfile", "-ExecutionPolicy", "Bypass", "-EncodedCommand", $encoded) `
+        -Wait -PassThru
+    if ($process.ExitCode -ne 0 -or [string]::IsNullOrWhiteSpace([Environment]::GetEnvironmentVariable("DEEPSEEK_API_KEY", "User"))) {
+        throw "DeepSeek API Key configuration did not complete."
+    }
+}
+
+function Enable-GitCommand {
+    if ($null -ne (Get-Command git -ErrorAction SilentlyContinue)) { return }
+    $winget = Get-Command winget -ErrorAction SilentlyContinue
+    if ($null -eq $winget) { throw "Git is missing and winget is unavailable." }
+    & $winget.Source install --id Git.Git --exact --source winget --accept-package-agreements --accept-source-agreements
+    if ($LASTEXITCODE -ne 0) { throw "Git installation failed." }
+    $gitDirectory = Join-Path $env:ProgramFiles "Git\cmd"
+    $gitExecutable = Join-Path $gitDirectory "git.exe"
+    if (-not (Test-Path -LiteralPath $gitExecutable)) { throw "Git was installed. Restart Windows and rerun this installer." }
+    $env:Path = "$gitDirectory;$env:Path"
+}
+
+function Install-Repository {
+    Enable-GitCommand
+    [IO.Directory]::CreateDirectory((Split-Path -Parent $InstallDirectory)) | Out-Null
+    $repositoryUrl = "https://github.com/$Repository.git"
+
+    if (Test-Path -LiteralPath (Join-Path $InstallDirectory ".git")) {
+        $origin = [string](& git -C $InstallDirectory remote get-url origin)
+        if ($LASTEXITCODE -ne 0) { throw "The installed repository has no readable origin." }
+        $normalized = $origin.Trim().TrimEnd('/').ToLowerInvariant()
+        $allowed = @(
+            $repositoryUrl.ToLowerInvariant(),
+            $repositoryUrl.Substring(0, $repositoryUrl.Length - 4).ToLowerInvariant(),
+            "git@github.com:$Repository.git".ToLowerInvariant()
+        )
+        if ($normalized -notin $allowed) { throw "Install directory belongs to another repository: $InstallDirectory" }
+        & git -C $InstallDirectory pull --ff-only
+        if ($LASTEXITCODE -ne 0) { throw "Updating dsbro failed." }
+    }
+    elseif (Test-Path -LiteralPath $InstallDirectory) {
+        throw "Install directory exists but is not a Git repository: $InstallDirectory"
+    }
+    else {
+        & git clone $repositoryUrl $InstallDirectory
+        if ($LASTEXITCODE -ne 0) { throw "Downloading dsbro failed." }
+    }
+}
+
+function Install-NativeCodexConfiguration {
+    $codexDirectory = if ([string]::IsNullOrWhiteSpace($env:CODEX_HOME)) {
+        Join-Path ([Environment]::GetFolderPath("UserProfile")) ".codex"
+    } else {
+        $env:CODEX_HOME
+    }
+    [IO.Directory]::CreateDirectory($codexDirectory) | Out-Null
+
+    $assetDirectory = Join-Path $InstallDirectory "codex-deepseek-worker\assets"
+    $catalogSource = Join-Path $assetDirectory "dsbro-models.json"
+    if (-not (Test-Path -LiteralPath $catalogSource)) { throw "dsbro model catalog is missing: $catalogSource" }
+
+    $catalogDestination = Join-Path $codexDirectory "dsbro-models.json"
+    Copy-Item -LiteralPath $catalogSource -Destination $catalogDestination -Force
+    Get-Content -LiteralPath $catalogDestination -Raw | ConvertFrom-Json | Out-Null
+
+    $configPath = Join-Path $codexDirectory "config.toml"
+    $config = if (Test-Path -LiteralPath $configPath) { Get-Content -LiteralPath $configPath -Raw } else { "" }
+    if ($null -eq $config) { $config = "" }
+
+    $config = [regex]::Replace($config, '(?ms)^\s*# dsbro-provider:start\s*$.*?^\s*# dsbro-provider:end\s*\r?\n?', '')
+    $config = [regex]::Replace($config, '(?ms)^\[model_providers\.deepseek\]\s*\r?\n.*?(?=^\[|\z)', '')
+    $managed = @"
+# dsbro-provider:start
+[model_providers.deepseek]
+name = "deepseek"
+base_url = "$BaseUrl"
+wire_api = "responses"
+env_key = "DEEPSEEK_API_KEY"
+env_key_instructions = "Set DEEPSEEK_API_KEY in your Windows user environment"
+# dsbro-provider:end
+"@
+    $newConfig = $config.TrimEnd() + "`r`n`r`n" + $managed.Trim() + "`r`n"
+
+    if (Test-Path -LiteralPath $configPath) {
+        $backupDirectory = Join-Path $codexDirectory "backup-dsbro"
+        [IO.Directory]::CreateDirectory($backupDirectory) | Out-Null
+        $backupName = "config-{0}.toml" -f (Get-Date -Format "yyyyMMdd-HHmmss")
+        Copy-Item -LiteralPath $configPath -Destination (Join-Path $backupDirectory $backupName)
+    }
+    [IO.File]::WriteAllText($configPath, $newConfig, [Text.UTF8Encoding]::new($false))
+    Write-Host "Native DeepSeek Responses provider configured; the main Codex model was preserved." -ForegroundColor Green
+}
+
+function Install-CodexPlugin {
+    $codex = Get-Command codex -ErrorAction SilentlyContinue
+    if ($null -eq $codex) { throw "Codex CLI is not available." }
+    $marketplaceName = "codex-deepseek-worker"
+    $marketplaces = (& $codex.Source plugin marketplace list --json | ConvertFrom-Json).marketplaces
+    if ($marketplaces | Where-Object { $_.name -eq $marketplaceName }) {
+        & $codex.Source plugin marketplace remove $marketplaceName *> $null
+        if ($LASTEXITCODE -ne 0) { throw "Removing the old dsbro marketplace failed." }
+    }
+    & $codex.Source plugin marketplace add $InstallDirectory --json | Out-Null
+    if ($LASTEXITCODE -ne 0) { throw "Registering the dsbro marketplace failed." }
+    & $codex.Source plugin add "codex-deepseek-worker@$marketplaceName" --json | Out-Null
+    if ($LASTEXITCODE -ne 0) { throw "Installing dsbro failed." }
 }
 
 if ($ConfigureApiKey) {
-    Set-DeepSeekUserSettings
+    Set-DeepSeekApiKey
     exit 0
 }
+if (-not $IsWindows -and $env:OS -ne "Windows_NT") { throw "This installer currently supports Windows only." }
 
-if (-not $IsWindows -and $env:OS -ne "Windows_NT") {
-    throw "This one-file installer currently supports Windows only."
-}
-
-Write-Host "Codex DeepSeek Worker installer" -ForegroundColor Cyan
-
-$codex = Get-Command codex -ErrorAction SilentlyContinue
-if ($null -eq $codex) {
-    throw "Codex CLI is not available. Open this file with Codex on the target machine and ask Codex to run it."
-}
-
-Enable-GitCommand
-
-$installParent = Split-Path -Parent $InstallDirectory
-[IO.Directory]::CreateDirectory($installParent) | Out-Null
-$repositoryUrl = "https://github.com/$Repository.git"
-
-if (Test-Path -LiteralPath (Join-Path $InstallDirectory ".git")) {
-    $originUrl = [string](& git -C $InstallDirectory remote get-url origin)
-    if ($LASTEXITCODE -ne 0) {
-        throw "The existing install repository has no readable origin remote."
-    }
-
-    $normalizedOrigin = $originUrl.Trim().TrimEnd('/').ToLowerInvariant()
-    $allowedOrigins = @(
-        $repositoryUrl.ToLowerInvariant(),
-        $repositoryUrl.Substring(0, $repositoryUrl.Length - 4).ToLowerInvariant(),
-        "git@github.com:$Repository.git".ToLowerInvariant()
-    )
-    if ($normalizedOrigin -notin $allowedOrigins) {
-        throw "Install directory origin does not match $Repository. Refusing to update it."
-    }
-
-    Write-Host "Updating plugin source..." -ForegroundColor Cyan
-    & git -C $InstallDirectory pull --ff-only
-    if ($LASTEXITCODE -ne 0) {
-        throw "Updating the existing plugin source failed."
-    }
-}
-elseif (Test-Path -LiteralPath $InstallDirectory) {
-    throw "Install directory already exists but is not a Git repository: $InstallDirectory"
-}
-else {
-    Write-Host "Downloading plugin source..." -ForegroundColor Cyan
-    & git clone $repositoryUrl $InstallDirectory
-    if ($LASTEXITCODE -ne 0) {
-        throw "Downloading the public plugin repository failed."
-    }
-}
-
-$marketplaceName = "codex-deepseek-worker"
-$marketplaces = (& $codex.Source plugin marketplace list --json | ConvertFrom-Json).marketplaces
-$existingMarketplace = $marketplaces | Where-Object { $_.name -eq $marketplaceName }
-if ($null -ne $existingMarketplace) {
-    & $codex.Source plugin marketplace remove $marketplaceName *> $null
-    if ($LASTEXITCODE -ne 0) {
-        throw "Removing the previous marketplace registration failed."
-    }
-}
-
-Write-Host "Registering marketplace and installing plugin..." -ForegroundColor Cyan
-& $codex.Source plugin marketplace add $InstallDirectory --json | Out-Null
-if ($LASTEXITCODE -ne 0) {
-    throw "Marketplace registration failed."
-}
-
-& $codex.Source plugin add "codex-deepseek-worker@$marketplaceName" --json | Out-Null
-if ($LASTEXITCODE -ne 0) {
-    throw "Plugin installation failed."
-}
-
-$existingApiKey = [Environment]::GetEnvironmentVariable("DEEPSEEK_WORKER_API_KEY", "User")
-if ([string]::IsNullOrWhiteSpace($existingApiKey)) {
-    $escapedScriptPath = $PSCommandPath.Replace("'", "''")
-    $escapedBaseUrl = $BaseUrl.Replace("'", "''")
-    $escapedModel = $Model.Replace("'", "''")
-    $keyCommand = "& '$escapedScriptPath' -ConfigureApiKey -BaseUrl '$escapedBaseUrl' -Model '$escapedModel'"
-    $encodedKeyCommand = ConvertTo-EncodedPowerShellCommand -Command $keyCommand
-    $keyProcess = Start-Process -FilePath "powershell.exe" `
-        -ArgumentList @("-NoProfile", "-ExecutionPolicy", "Bypass", "-EncodedCommand", $encodedKeyCommand) `
-        -Wait -PassThru
-    if ($keyProcess.ExitCode -ne 0) {
-        throw "API Key configuration did not complete."
-    }
-
-    if ([string]::IsNullOrWhiteSpace([Environment]::GetEnvironmentVariable("DEEPSEEK_WORKER_API_KEY", "User"))) {
-        throw "API Key was not saved."
-    }
-}
-else {
-    Write-Host "Existing API Key preserved." -ForegroundColor Green
-}
-$existingApiKey = $null
-
-Write-Host "Installation complete." -ForegroundColor Green
-Write-Host "Restart Codex, open a new thread, and enter: dsbro"
+Write-Host "Installing dsbro native DeepSeek worker..." -ForegroundColor Cyan
+Install-Repository
+Ensure-DeepSeekApiKey
+Install-NativeCodexConfiguration
+Install-CodexPlugin
+Write-Host "dsbro installed. Restart Codex, open the target project, and enter: dsbro" -ForegroundColor Green

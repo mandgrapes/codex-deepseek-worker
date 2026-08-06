@@ -1,41 +1,45 @@
-# Codex DeepSeek Worker
+# dsbro — DeepSeek worker for Codex
 
-一个最小 Codex 插件：Codex 选择并脱敏任务上下文，调用 `deepseek-v4-flash` 生成补丁，再由 Codex 审查、应用并运行测试。
+`dsbro` makes DeepSeek V4 Flash a native Codex sub-agent for the current project. The main Codex agent stays in control: it delegates bounded implementation work, reviews the diff, and runs tests.
 
-DeepSeek API 不会直接访问本地文件、终端或完整仓库。它只能看到 Codex 明确放入请求 JSON 的内容。API Key 只从本机用户环境变量读取，不保存在仓库中。
+This version uses DeepSeek's Responses API and Codex custom agents. DeepSeek can inspect the project and use Codex tools under the same sandbox as other sub-agents. It is no longer the old “send selected source text and receive a patch” wrapper.
 
-## 在另一台 Windows 机器安装
+## Install on Windows
 
-最简单的方法是只把 [`给Codex安装.md`](给Codex安装.md) 交给另一台机器上的 Codex，然后说：
+Give [`给Codex安装.md`](给Codex安装.md) to Codex on the target machine and ask it to follow the file. The only manual input is the DeepSeek API Key.
 
-> 读取这个文件并照着完成安装。
-
-仓库地址和命令都已写在文件中，你不需要手动输入。
-
-也可以直接把 [`install.ps1`](install.ps1) 给那台机器上的 Codex，然后说：
-
-> 读取并运行这个安装文件。需要授权时让我按回车，API Key 由我自己输入。
-
-Codex 执行：
+Or run:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\install.ps1
 ```
 
-安装器会自动检查 Git、从公开仓库下载源码、注册插件市场、安装插件，以及弹出安全的 API Key 输入窗口。不需要 GitHub 登录；除首次输入 API Key 外，不需要手动填写配置。模型固定为 `deepseek-v4-flash`。
+The installer:
 
-重启 Codex 后，在项目中输入：
+- downloads or updates the public GitHub repository;
+- installs the Codex plugin;
+- adds a DeepSeek Responses provider without changing the main Codex model;
+- stores the API key in the Windows user environment as `DEEPSEEK_API_KEY`;
+- installs metadata for `deepseek-v4-flash` only.
 
-> dsbro
+Restart Codex, open a project, and enter:
 
-`dsbro` 不区分大小写。之后该项目的实现任务默认考虑交给 DeepSeek，最终修改仍由 Codex 验收。旧口令“用 DeepSeek 当小弟”仍可使用。
+```text
+dsbro
+```
 
-启用后不会反复播报“交给 DeepSeek、审查补丁、运行测试”等固定流程；Codex 只报告实际修改、测试结果、阻塞和风险。
+This creates `.codex/agents/worker.toml` in that project. The project-level `worker` overrides Codex's built-in worker, so normal worker delegation uses DeepSeek while the parent remains Codex. Start a new thread after first enabling it.
 
-以后需要在其他机器更新插件，只需输入：
+To update later:
 
-> update_dsbro
+```text
+update_dsbro
+```
 
-Codex 会从公开仓库拉取并重装最新版，无需 GitHub 登录；已有 API Key 不会被显示或覆盖。更新后重启 Codex 并开启新对话。
+No GitHub login is required because the repository is public. Existing API keys are preserved and never displayed.
 
-详细设计见 [CODEX_DEEPSEEK_PLUGIN_MVP.md](CODEX_DEEPSEEK_PLUGIN_MVP.md)。
+## Privacy boundary
+
+This is a real agent, so it can read files that the inherited Codex sandbox allows it to read. Do not describe it as unable to access the project. Credentials must still remain outside prompts, logs, and repository files.
+
+Design details: [`CODEX_DEEPSEEK_PLUGIN_MVP.md`](CODEX_DEEPSEEK_PLUGIN_MVP.md).
