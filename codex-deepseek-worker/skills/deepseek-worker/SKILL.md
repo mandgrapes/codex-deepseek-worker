@@ -5,7 +5,7 @@ description: Enable, use, or update dsbro, a Codex worker thread powered by Deep
 
 # dsbro
 
-`dsbro` runs `deepseek-v4-flash` in a normal Codex coding session. It gets the Codex agent prompt, project instructions, repository tools, patch tool, shell, sandbox, and local conversation history. The parent Codex session delegates, reviews, and accepts the work.
+`dsbro` uses Codex's built-in MCP server to run `deepseek-v4-flash` in a normal Codex coding session. It gets the Codex agent prompt, project instructions, repository tools, patch tool, shell, sandbox, and local conversation history. The parent Codex session delegates, reviews, and accepts the work.
 
 DeepSeek's Responses endpoint does not store server-side conversations, but Codex stores the worker thread locally. Resume calls reconstruct the conversation, so the worker can receive test failures, corrections, and follow-up tasks just like a continuing agent thread.
 
@@ -23,7 +23,7 @@ When the user sends `dsbro` as a standalone command:
 Use `$codex-deepseek-worker:deepseek-worker` as the default worker for implementation and debugging. The parent Codex agent delegates work to a DeepSeek V4 Flash Codex thread, reviews the actual diff, and runs relevant verification.
 
 Keep routine delegation silent. Report actual changes, verification, blockers, and risks; do not recite the workflow unless asked.
-While the DeepSeek worker process is running, keep waiting. Latency or temporary silence is not failure and must not trigger parent takeover.
+While the DeepSeek Codex MCP call is active, keep waiting. Latency or temporary silence is not failure and must not trigger parent takeover.
 <!-- dsbro:end -->
 ```
 
@@ -33,34 +33,24 @@ While the DeepSeek worker process is running, keep waiting. Latency or temporary
 
 ## Start a worker thread
 
-Invoke the launcher from this skill directory. Pass the parent session's current sandbox mode when available; if omitted, the worker uses normal Codex configuration:
+Call the bundled `dsbro` MCP server's `codex` tool. Give it the task, project root, `sandbox: "workspace-write"`, and `approval-policy: "never"`. The tool starts a persistent Codex conversation and returns its thread identifier.
 
-```powershell
-& ".\scripts\invoke-dsbro.ps1" -ProjectRoot "<project-root>" -Task "<task>" -SandboxMode workspace-write
-```
-
-Long tasks may use `-TaskFile`. The launcher prints `DSBRO_SESSION_ID=<uuid>`; retain that ID for follow-ups during the task.
+Do not invoke `codex exec`, `codex app-server`, the DeepSeek API, or a custom process manager. The bundled server is the official `codex mcp-server` command configured with the `dsbro` Codex profile.
 
 ## Wait for the worker
 
-- A running launcher process means the DeepSeek worker still owns the delegated task.
-- If the command yields a running process or cell identifier, wait for it repeatedly in short intervals supported by the host. Do not impose a total time limit.
-- Temporary lack of model output is normal. Give the user a brief status update when appropriate, then continue waiting.
-- While it is running, do not implement the same task in the parent, start an OpenAI fallback worker, or make overlapping edits.
-- Parent takeover is allowed only after the launcher has definitely exited with failure, the user cancels it, or the user explicitly asks Codex to take over.
+- Keep the MCP tool call active until Codex returns its result. Do not impose a separate timeout or infer failure from model silence.
+- While the call is active, do not implement the same task in the parent, start an OpenAI fallback worker, or make overlapping edits.
+- Parent takeover is allowed only after Codex reports failure, the user cancels it, or the user explicitly asks Codex to take over.
 - After successful completion, the parent resumes its normal review and verification role.
 
 ## Continue the same worker
 
-Send test failures, review comments, or the next instruction back to the same thread:
-
-```powershell
-& ".\scripts\invoke-dsbro.ps1" -ProjectRoot "<project-root>" -SessionId "<uuid>" -Task "<follow-up>"
-```
+Send test failures, review comments, or the next instruction through the bundled server's `codex-reply` tool using the thread identifier returned by `codex`.
 
 Start separate worker threads when normal Codex orchestration would use separate subagents. Do not overlap write scopes. After worker changes, the parent inspects the real diff and independently verifies the result. Keep API keys out of prompts, files, logs, and responses.
 
-Current Codex 0.146.1 rejects third-party models inside the built-in `spawn_agent` router. Therefore the launcher uses a child Codex thread rather than silently falling back to an OpenAI worker. Apart from that router boundary, the worker uses the Codex runtime and model metadata directly.
+Current Codex 0.146.1 rejects third-party models inside the built-in `spawn_agent` router. Therefore dsbro uses Codex's own documented MCP-server worker surface rather than silently falling back to an OpenAI worker. Codex owns the worker thread, persistence, tools, sandbox, and follow-up turns.
 
 ## Update dsbro
 
@@ -78,4 +68,5 @@ When the user sends `update_dsbro` as a standalone command:
 - Protocol: Responses API.
 - Credential: `DEEPSEEK_API_KEY` from the Windows user environment.
 - Model catalog: `~/.codex/dsbro-models.json` from DeepSeek's official Codex setup.
+- Codex profile: `~/.codex/dsbro.config.toml`.
 - The parent Codex model/provider is unchanged.

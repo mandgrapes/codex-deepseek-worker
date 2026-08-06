@@ -123,32 +123,39 @@ function Install-NativeCodexConfiguration {
     Copy-Item -LiteralPath $catalogSource -Destination $catalogDestination -Force
     Get-Content -LiteralPath $catalogDestination -Raw -Encoding UTF8 | ConvertFrom-Json | Out-Null
 
+    $profilePath = Join-Path $codexDirectory "dsbro.config.toml"
+    $catalogProfilePath = $catalogDestination.Replace("\", "/").Replace('"', '\"')
+    $profileBaseUrl = $BaseUrl.Replace("\", "\\").Replace('"', '\"')
+    $profile = @"
+model = "$Model"
+model_provider = "deepseek"
+model_catalog_json = "$catalogProfilePath"
+
+[model_providers.deepseek]
+name = "deepseek"
+base_url = "$profileBaseUrl"
+wire_api = "responses"
+env_key = "DEEPSEEK_API_KEY"
+env_key_instructions = "Set DEEPSEEK_API_KEY in your Windows user environment"
+"@
+    [IO.File]::WriteAllText($profilePath, $profile.Trim() + "`r`n", [Text.UTF8Encoding]::new($false))
+
     $configPath = Join-Path $codexDirectory "config.toml"
     $config = if (Test-Path -LiteralPath $configPath) { Get-Content -LiteralPath $configPath -Raw -Encoding UTF8 } else { "" }
     if ($null -eq $config) { $config = "" }
 
-    $config = [regex]::Replace($config, '(?ms)^\s*# dsbro-provider:start\s*$.*?^\s*# dsbro-provider:end\s*\r?\n?', '')
-    $config = [regex]::Replace($config, '(?ms)^\[model_providers\.deepseek\]\s*\r?\n.*?(?=^\[|\z)', '')
-    $managed = @"
-# dsbro-provider:start
-[model_providers.deepseek]
-name = "deepseek"
-base_url = "$BaseUrl"
-wire_api = "responses"
-env_key = "DEEPSEEK_API_KEY"
-env_key_instructions = "Set DEEPSEEK_API_KEY in your Windows user environment"
-# dsbro-provider:end
-"@
-    $newConfig = $config.TrimEnd() + "`r`n`r`n" + $managed.Trim() + "`r`n"
+    $newConfig = [regex]::Replace($config, '(?ms)^\s*# dsbro-provider:start\s*$.*?^\s*# dsbro-provider:end\s*\r?\n?', '').TrimEnd() + "`r`n"
 
-    if (Test-Path -LiteralPath $configPath) {
+    if ((Test-Path -LiteralPath $configPath) -and $newConfig -ne $config) {
         $backupDirectory = Join-Path $codexDirectory "backup-dsbro"
         [IO.Directory]::CreateDirectory($backupDirectory) | Out-Null
         $backupName = "config-{0}.toml" -f (Get-Date -Format "yyyyMMdd-HHmmss")
         Copy-Item -LiteralPath $configPath -Destination (Join-Path $backupDirectory $backupName)
     }
-    [IO.File]::WriteAllText($configPath, $newConfig, [Text.UTF8Encoding]::new($false))
-    Write-Host "Native DeepSeek Responses provider configured; the main Codex model was preserved." -ForegroundColor Green
+    if ($newConfig -ne $config) {
+        [IO.File]::WriteAllText($configPath, $newConfig, [Text.UTF8Encoding]::new($false))
+    }
+    Write-Host "Dedicated dsbro Codex profile configured; the main Codex configuration was preserved." -ForegroundColor Green
 }
 
 function Install-CodexPlugin {

@@ -1,15 +1,16 @@
 {
   "name": "codex-deepseek-worker",
-  "version": "0.1.0+codex.20260806181728",
-  "description": "Run DeepSeek V4 Flash in a persistent, resumable Codex worker thread under Codex supervision.",
+  "version": "0.1.0+codex.20260806183055",
+  "description": "Use DeepSeek V4 Flash through Codex's built-in MCP worker server.",
   "author": {
     "name": "Local developer"
   },
   "skills": "./skills/",
+  "mcpServers": "./.mcp.json",
   "interface": {
     "displayName": "Codex DeepSeek Worker",
-    "shortDescription": "Use DeepSeek in a resumable Codex worker thread.",
-    "longDescription": "A persistent local Codex thread uses DeepSeek V4 Flash through the Responses API with Codex tools, project context, and sandboxing. The parent Codex agent can resume, review, and verify its work.",
+    "shortDescription": "Use DeepSeek through Codex's native MCP worker.",
+    "longDescription": "Codex's built-in MCP server runs a persistent DeepSeek V4 Flash Codex thread with native tools, project context, sandboxing, and follow-up turns. The parent Codex agent reviews and verifies its work.",
     "developerName": "Local developer",
     "category": "Productivity",
     "capabilities": [],

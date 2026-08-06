@@ -6,11 +6,11 @@
 
 ## Architecture
 
-1. The installer adds `[model_providers.deepseek]` using the Responses API and environment-key authentication.
+1. The installer creates a dedicated `~/.codex/dsbro.config.toml` profile containing the DeepSeek Responses provider and environment-key authentication; the main Codex configuration remains unchanged.
 2. It installs DeepSeek's official V4 Flash Codex model metadata at `~/.codex/dsbro-models.json`.
-3. The plugin starts a normal persisted `codex exec` session with the DeepSeek provider and returns its session ID.
+3. The plugin bundles Codex's own `codex mcp-server`, launched with a dedicated DeepSeek profile.
 4. The worker reads and edits the project using Codex tools and the selected sandbox.
-5. Follow-ups resume the same local session, preserving the worker's context.
+5. Codex's native `codex-reply` tool continues the same local conversation.
 6. The parent Codex agent reviews the real diff and independently runs tests.
 
 ## State model
@@ -19,7 +19,7 @@ DeepSeek's Responses API is stateless on the server: it does not support `previo
 
 ## Built-in router boundary
 
-Codex 0.146.1 validates `spawn_agent` models against an OpenAI allowlist and rejects `deepseek-v4-flash`, even from a custom-agent TOML. dsbro uses a child Codex thread to avoid fallback while retaining Codex tools, prompts, context, session history, and sandboxing.
+Codex 0.146.1 validates `spawn_agent` models against an OpenAI allowlist and rejects `deepseek-v4-flash`, even from a custom-agent TOML. dsbro therefore uses the documented `codex mcp-server` surface intended for one agent to consume Codex. Codex itself retains ownership of tools, prompts, context, session history, sandboxing, and follow-up turns.
 
 ## Constraints
 
@@ -33,6 +33,7 @@ Codex 0.146.1 validates `spawn_agent` models against an OpenAI allowlist and rej
 - No Chat Completions patch wrapper.
 - No selected-snippet request serialization.
 - No ephemeral-only lifecycle.
+- No custom agent lifecycle, session store, wait loop, or DeepSeek API wrapper.
 - No custom-agent configuration that silently falls back to an OpenAI worker.
 
 ## Commands

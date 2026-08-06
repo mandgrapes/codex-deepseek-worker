@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "dsbro": {
+      "command": "powershell.exe",
+      "args": ["-NoProfile", "-Command", "& codex -p dsbro mcp-server"]
+    }
+  }
+}

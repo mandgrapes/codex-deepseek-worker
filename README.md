@@ -1,12 +1,12 @@
 # dsbro — DeepSeek worker for Codex
 
-`dsbro` lets the main Codex agent assign implementation work to a DeepSeek V4 Flash Codex thread. The worker uses DeepSeek's Responses API plus the normal Codex prompt, project instructions, repository tools, shell, patch tool, sandbox, and local session history. The main Codex agent reviews the diff and runs tests.
+`dsbro` lets the main Codex agent assign implementation work to a DeepSeek V4 Flash Codex thread. The plugin launches Codex's built-in MCP server under a dedicated DeepSeek profile. The worker uses the normal Codex prompt, project instructions, repository tools, shell, patch tool, sandbox, and local session history. The main Codex agent reviews the diff and runs tests.
 
 The worker thread is persistent and resumable. DeepSeek does not store a server-side conversation, but Codex stores the thread locally and reconstructs its context for follow-up turns.
 
-## Why a child Codex thread?
+## Why Codex MCP?
 
-Codex 0.146.1 currently rejects third-party models in its built-in `spawn_agent` model router. A normal `codex exec` thread does support DeepSeek's official Responses provider. `dsbro` uses that Codex runtime path, returns a session ID, and resumes the same worker for corrections or more work. It never silently substitutes an OpenAI worker.
+Codex 0.146.1 currently rejects third-party models in its built-in `spawn_agent` model router. Codex also ships a documented `codex mcp-server` command specifically for use by another agent. It exposes `codex` and `codex-reply`, keeps conversations alive across turns, and owns the thread lifecycle. `dsbro` configures that official server for DeepSeek; it does not implement its own agent manager.
 
 ## Install on Windows
 
@@ -16,7 +16,7 @@ Give [`给Codex安装.md`](给Codex安装.md) to Codex on the target machine, or
 powershell -ExecutionPolicy Bypass -File .\install.ps1
 ```
 
-The installer downloads or updates the public repository, installs the plugin, adds the DeepSeek provider without changing the main Codex model, stores the Key in the Windows user environment, and installs DeepSeek's official `deepseek-v4-flash` Codex metadata.
+The installer downloads or updates the public repository, installs the plugin, creates a dedicated DeepSeek Codex profile without changing the main Codex configuration, stores the key in the Windows user environment, and installs DeepSeek's official `deepseek-v4-flash` Codex metadata.
 
 Restart Codex, open a project, and enter:
 
@@ -26,7 +26,7 @@ dsbro
 
 After that, make normal implementation requests. Routine worker handoffs remain quiet.
 
-If a DeepSeek worker takes a long time, Codex keeps waiting while its process is alive. Silence or latency alone does not trigger parent takeover; Codex takes over only after a confirmed failure, cancellation, or an explicit user request.
+If a DeepSeek worker takes a long time, the parent keeps the Codex MCP call active. Silence or latency alone does not trigger parent takeover; Codex takes over only after a confirmed failure, cancellation, or an explicit user request.
 
 To update:
 
