@@ -1,4 +1,0 @@
-interface:
-  display_name: "dsbro"
-  short_description: "Resumable DeepSeek V4 Flash Codex worker"
-  default_prompt: "dsbro"
