@@ -22,41 +22,6 @@ function ConvertTo-EncodedPowerShellCommand {
     return [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($Command))
 }
 
-function Get-GitHubCliPath {
-    $command = Get-Command gh -ErrorAction SilentlyContinue
-    if ($null -ne $command) {
-        return $command.Source
-    }
-
-    $commonPath = Join-Path $env:ProgramFiles "GitHub CLI\gh.exe"
-    if (Test-Path -LiteralPath $commonPath) {
-        return $commonPath
-    }
-
-    return $null
-}
-
-function Install-GitHubCli {
-    $winget = Get-Command winget -ErrorAction SilentlyContinue
-    if ($null -eq $winget) {
-        throw "GitHub CLI is missing and winget is unavailable. Install GitHub CLI, then run this file again."
-    }
-
-    Write-Host "Installing GitHub CLI..." -ForegroundColor Cyan
-    & $winget.Source install --id GitHub.cli --exact --source winget `
-        --accept-package-agreements --accept-source-agreements
-    if ($LASTEXITCODE -ne 0) {
-        throw "GitHub CLI installation failed."
-    }
-
-    $ghPath = Get-GitHubCliPath
-    if ([string]::IsNullOrWhiteSpace($ghPath)) {
-        throw "GitHub CLI was installed but gh.exe could not be found. Restart Windows and run this file again."
-    }
-
-    return $ghPath
-}
-
 function Enable-GitCommand {
     $gitCommand = Get-Command git -ErrorAction SilentlyContinue
     if ($null -ne $gitCommand) {
@@ -82,30 +47,6 @@ function Enable-GitCommand {
     }
 
     $env:Path = "$gitCommandDirectory;$env:Path"
-}
-
-function Invoke-VisibleGitHubLogin {
-    param(
-        [Parameter(Mandatory = $true)]
-        [string]$GitHubCliPath
-    )
-
-    $escapedPath = $GitHubCliPath.Replace("'", "''")
-    $loginCommand = @"
-& '$escapedPath' auth login --hostname github.com --git-protocol https --web
-if (`$LASTEXITCODE -ne 0) {
-    Write-Host 'GitHub login failed.' -ForegroundColor Red
-    Read-Host 'Press Enter to close'
-    exit 1
-}
-"@
-    $encodedCommand = ConvertTo-EncodedPowerShellCommand -Command $loginCommand
-    $process = Start-Process -FilePath "powershell.exe" `
-        -ArgumentList @("-NoProfile", "-ExecutionPolicy", "Bypass", "-EncodedCommand", $encodedCommand) `
-        -Wait -PassThru
-    if ($process.ExitCode -ne 0) {
-        throw "GitHub login did not complete."
-    }
 }
 
 function Set-DeepSeekUserSettings {
@@ -152,28 +93,28 @@ if ($null -eq $codex) {
     throw "Codex CLI is not available. Open this file with Codex on the target machine and ask Codex to run it."
 }
 
-$ghPath = Get-GitHubCliPath
-if ([string]::IsNullOrWhiteSpace($ghPath)) {
-    $ghPath = Install-GitHubCli
-}
-
 Enable-GitCommand
-
-& $ghPath auth status --hostname github.com *> $null
-if ($LASTEXITCODE -ne 0) {
-    Write-Host "GitHub login is required once because the plugin repository is private." -ForegroundColor Yellow
-    Invoke-VisibleGitHubLogin -GitHubCliPath $ghPath
-}
-
-& $ghPath auth status --hostname github.com *> $null
-if ($LASTEXITCODE -ne 0) {
-    throw "GitHub login could not be verified."
-}
 
 $installParent = Split-Path -Parent $InstallDirectory
 [IO.Directory]::CreateDirectory($installParent) | Out-Null
+$repositoryUrl = "https://github.com/$Repository.git"
 
 if (Test-Path -LiteralPath (Join-Path $InstallDirectory ".git")) {
+    $originUrl = [string](& git -C $InstallDirectory remote get-url origin)
+    if ($LASTEXITCODE -ne 0) {
+        throw "The existing install repository has no readable origin remote."
+    }
+
+    $normalizedOrigin = $originUrl.Trim().TrimEnd('/').ToLowerInvariant()
+    $allowedOrigins = @(
+        $repositoryUrl.ToLowerInvariant(),
+        $repositoryUrl.Substring(0, $repositoryUrl.Length - 4).ToLowerInvariant(),
+        "git@github.com:$Repository.git".ToLowerInvariant()
+    )
+    if ($normalizedOrigin -notin $allowedOrigins) {
+        throw "Install directory origin does not match $Repository. Refusing to update it."
+    }
+
     Write-Host "Updating plugin source..." -ForegroundColor Cyan
     & git -C $InstallDirectory pull --ff-only
     if ($LASTEXITCODE -ne 0) {
@@ -185,9 +126,9 @@ elseif (Test-Path -LiteralPath $InstallDirectory) {
 }
 else {
     Write-Host "Downloading plugin source..." -ForegroundColor Cyan
-    & $ghPath repo clone $Repository $InstallDirectory
+    & git clone $repositoryUrl $InstallDirectory
     if ($LASTEXITCODE -ne 0) {
-        throw "Downloading the private plugin repository failed."
+        throw "Downloading the public plugin repository failed."
     }
 }
 

@@ -31,7 +31,7 @@ When the user sends `update_dsbro` as a standalone command (case-insensitive):
 
 1. Use the standard repository path `%LOCALAPPDATA%\Codex\marketplaces\codex-deepseek-worker`.
 2. If it already exists, verify that it is a Git repository whose `origin` points to `mandgrapes/codex-deepseek-worker`. Do not update or delete an unrelated directory.
-3. If it is absent, verify GitHub CLI authentication and clone the private repository `mandgrapes/codex-deepseek-worker` to that path.
+3. If it is absent, clone the public repository `https://github.com/mandgrapes/codex-deepseek-worker.git` to that path with Git. No GitHub login is required.
 4. Run the repository's `install.ps1`. It pulls with `--ff-only`, refreshes the marketplace registration, and reinstalls the plugin. An existing `DEEPSEEK_WORKER_API_KEY` is preserved without being displayed or overwritten.
 5. Verify with `codex plugin list` that `codex-deepseek-worker` is `installed, enabled`.
 6. Report the installed version and ask the user to restart Codex and open a new thread. Do not perform project implementation work in the update turn unless separately requested.

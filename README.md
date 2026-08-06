@@ -22,7 +22,7 @@ Codex 执行：
 powershell -ExecutionPolicy Bypass -File .\install.ps1
 ```
 
-安装器会自动检查 GitHub CLI、登录并下载私有仓库、注册插件市场、安装插件，以及弹出安全的 API Key 输入窗口。除首次 GitHub 网页授权和 API Key 外，不需要手动填写配置；模型固定为 `deepseek-v4-flash`。
+安装器会自动检查 Git、从公开仓库下载源码、注册插件市场、安装插件，以及弹出安全的 API Key 输入窗口。不需要 GitHub 登录；除首次输入 API Key 外，不需要手动填写配置。模型固定为 `deepseek-v4-flash`。
 
 重启 Codex 后，在项目中输入：
 
@@ -34,6 +34,6 @@ powershell -ExecutionPolicy Bypass -File .\install.ps1
 
 > update_dsbro
 
-Codex 会从私有仓库拉取并重装最新版，已有 API Key 不会被显示或覆盖。更新后重启 Codex 并开启新对话。
+Codex 会从公开仓库拉取并重装最新版，无需 GitHub 登录；已有 API Key 不会被显示或覆盖。更新后重启 Codex 并开启新对话。
 
 详细设计见 [CODEX_DEEPSEEK_PLUGIN_MVP.md](CODEX_DEEPSEEK_PLUGIN_MVP.md)。
