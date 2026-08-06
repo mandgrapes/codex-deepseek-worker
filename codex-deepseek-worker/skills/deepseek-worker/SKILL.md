@@ -26,13 +26,13 @@ Keep routine delegation silent. Report actual changes, verification, blockers, a
 <!-- dsbro:end -->
 ```
 
-3. Remove obsolete dsbro managed blocks and `.codex/agents/worker.toml` left by the abandoned custom-agent experiment.
+3. Remove obsolete dsbro managed blocks. Remove `.codex/agents/worker.toml` only when its content identifies it as the old dsbro-generated DeepSeek worker; preserve any user-authored worker.
 4. Preserve unrelated `AGENTS.md` content.
 5. Reply only `dsbro enabled.` unless a concrete task was also supplied.
 
 ## Start a worker thread
 
-Invoke the launcher from this skill directory. Pass the parent session's current sandbox mode when known:
+Invoke the launcher from this skill directory. Pass the parent session's current sandbox mode when available; if omitted, the worker uses normal Codex configuration:
 
 ```powershell
 & ".\scripts\invoke-dsbro.ps1" -ProjectRoot "<project-root>" -Task "<task>" -SandboxMode workspace-write

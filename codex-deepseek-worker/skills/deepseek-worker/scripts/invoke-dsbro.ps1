@@ -12,7 +12,7 @@ param(
     [string]$SessionId,
 
     [ValidateSet("read-only", "workspace-write", "danger-full-access")]
-    [string]$SandboxMode = "workspace-write",
+    [string]$SandboxMode,
 
     [string]$OutputFile
 )
@@ -65,12 +65,14 @@ if ([string]::IsNullOrWhiteSpace($SessionId)) {
     $arguments = @(
         "exec",
         "--json",
-        "--sandbox", $SandboxMode,
         "-C", $resolvedProject,
         "-c", 'model_provider="deepseek"',
         "-c", "model_catalog_json=`"$catalogTomlPath`"",
         "-m", "deepseek-v4-flash"
     )
+    if (-not [string]::IsNullOrWhiteSpace($SandboxMode)) {
+        $arguments += @("--sandbox", $SandboxMode)
+    }
 } else {
     $arguments = @(
         "exec", "resume",
