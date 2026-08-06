@@ -4,9 +4,12 @@
       "command": "powershell.exe",
       "tool_timeout_sec": 3600,
       "args": [
+        "-WindowStyle",
+        "Hidden",
         "-NoProfile",
+        "-NonInteractive",
         "-Command",
-        "$codexHome = if ([string]::IsNullOrWhiteSpace($env:CODEX_HOME)) { Join-Path ([Environment]::GetFolderPath('UserProfile')) '.codex' } else { $env:CODEX_HOME }; $catalog = (Join-Path $codexHome 'dsbro-models.json').Replace('\\', '/'); & codex mcp-server -c 'model=\"deepseek-v4-flash\"' -c 'model_provider=\"deepseek\"' -c 'model_providers.deepseek.name=\"deepseek\"' -c 'model_providers.deepseek.base_url=\"https://api.deepseek.com/\"' -c 'model_providers.deepseek.wire_api=\"responses\"' -c 'model_providers.deepseek.env_key=\"DEEPSEEK_API_KEY\"' -c ('model_catalog_json=\"' + $catalog + '\"'); exit $LASTEXITCODE"
+        "$key = [Environment]::GetEnvironmentVariable('DEEPSEEK_API_KEY', 'User'); if ([string]::IsNullOrWhiteSpace($key)) { throw 'DEEPSEEK_API_KEY is not configured.' }; $env:DEEPSEEK_API_KEY = $key; & codex mcp-server; exit $LASTEXITCODE"
       ]
     }
   }

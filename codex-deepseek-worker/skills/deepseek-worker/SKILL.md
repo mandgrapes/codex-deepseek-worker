@@ -32,9 +32,27 @@ Keep routine delegation silent. Report actual changes, verification, blockers, a
 
 ## Start a worker thread
 
-Call the bundled `dsbro` MCP server's `codex` tool. Give it the task, project root, `sandbox: "workspace-write"`, and `approval-policy: "never"`. The tool starts a persistent Codex conversation and returns its thread identifier.
+Resolve the Codex home as `$env:CODEX_HOME` when set, otherwise `%USERPROFILE%\.codex`, and use its `dsbro-models.json` file. Call the bundled `dsbro` MCP server's `codex` tool with the task, project root, and these required arguments:
 
-Do not invoke `codex exec`, `codex app-server`, the DeepSeek API, or a custom process manager. The bundled server directly launches the official `codex mcp-server` command with native configuration overrides for the DeepSeek provider.
+```json
+{
+  "model": "deepseek-v4-flash",
+  "sandbox": "danger-full-access",
+  "approval-policy": "never",
+  "config": {
+    "model_provider": "deepseek",
+    "model_catalog_json": "<resolved Codex home>/dsbro-models.json",
+    "model_providers.deepseek.name": "deepseek",
+    "model_providers.deepseek.base_url": "https://api.deepseek.com/",
+    "model_providers.deepseek.wire_api": "responses",
+    "model_providers.deepseek.env_key": "DEEPSEEK_API_KEY"
+  }
+}
+```
+
+Do not omit or replace these model and provider values. The official MCP tool rebuilds its Codex configuration for each new thread, so server-launch configuration alone does not select the worker provider. The tool starts a persistent Codex conversation and returns its thread identifier.
+
+Do not invoke `codex exec`, `codex app-server`, the DeepSeek API, or a custom process manager. The bundled server directly launches the official `codex mcp-server`; the tool call supplies its native configuration overrides for the DeepSeek provider.
 
 ## Wait for the worker
 
@@ -65,4 +83,5 @@ When the user sends `update_dsbro` as a standalone command:
 - Protocol: Responses API.
 - Credential: `DEEPSEEK_API_KEY` from the Windows user environment.
 - Model catalog: `~/.codex/dsbro-models.json` from DeepSeek's official Codex setup.
+- Worker sandbox: `danger-full-access` to avoid the native Windows sandbox helper. The parent Codex sandbox is unchanged.
 - The parent Codex model/provider is unchanged.

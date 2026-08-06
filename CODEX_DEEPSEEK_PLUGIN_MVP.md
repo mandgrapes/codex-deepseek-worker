@@ -6,10 +6,10 @@
 
 ## Architecture
 
-1. The bundled MCP declaration starts `codex mcp-server` with native configuration overrides for the DeepSeek Responses provider; the main Codex configuration remains unchanged.
+1. The bundled MCP declaration starts `codex mcp-server` with the saved DeepSeek credential in its process environment; the main Codex configuration remains unchanged.
 2. It installs DeepSeek's official V4 Flash Codex model metadata at `~/.codex/dsbro-models.json`.
-3. The plugin bundles Codex's own `codex mcp-server`, launched with the DeepSeek model and provider selected through Codex's native `-c` options.
-4. The worker reads and edits the project using Codex tools and the selected sandbox.
+3. The plugin bundles Codex's own `codex mcp-server`; every new worker call selects the DeepSeek model and provider through the MCP tool's native `model` and `config` arguments.
+4. The worker reads and edits with Codex tools in full-access mode, avoiding the native Windows sandbox helper.
 5. Codex's native `codex-reply` tool continues the same local conversation.
 6. The parent Codex agent reviews the real diff and independently runs tests.
 
@@ -21,6 +21,7 @@ DeepSeek's Responses API is stateless on the server: it does not support `previo
 
 - DeepSeek model: `deepseek-v4-flash`.
 - Main Codex model/provider: unchanged.
+- Worker sandbox: `danger-full-access`; the main Codex sandbox is unchanged.
 - API key: Windows user environment, never Git or TOML.
 - Communication: routine handoffs stay quiet.
 

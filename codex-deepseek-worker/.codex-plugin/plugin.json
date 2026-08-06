@@ -1,6 +1,6 @@
 {
   "name": "codex-deepseek-worker",
-  "version": "0.1.0+codex.20260806184842",
+  "version": "0.1.0+codex.20260806194531",
   "description": "Use DeepSeek V4 Flash through Codex's built-in MCP worker server.",
   "author": {
     "name": "Local developer"
