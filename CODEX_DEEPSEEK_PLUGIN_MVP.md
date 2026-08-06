@@ -17,25 +17,17 @@
 
 DeepSeek's Responses API is stateless on the server: it does not support `previous_response_id` or a hosted conversation object. Codex provides the state by storing its thread locally and replaying the required history when the session is resumed. The worker is therefore persistent from the user's and parent's perspective.
 
-## Built-in router boundary
-
-Codex 0.146.1 validates `spawn_agent` models against an OpenAI allowlist and rejects `deepseek-v4-flash`, even from a custom-agent TOML. dsbro therefore uses the documented `codex mcp-server` surface intended for one agent to consume Codex. Codex itself retains ownership of tools, prompts, context, session history, sandboxing, and follow-up turns.
-
 ## Constraints
 
 - DeepSeek model: `deepseek-v4-flash`.
 - Main Codex model/provider: unchanged.
 - API key: Windows user environment, never Git or TOML.
 - Communication: routine handoffs stay quiet.
-- Worker timeout: Codex-native MCP `tool_timeout_sec = 3600`.
 
-## Removed routes
+## Limitations
 
-- No Chat Completions patch wrapper.
-- No selected-snippet request serialization.
-- No ephemeral-only lifecycle.
-- No custom agent lifecycle, session store, wait loop, or DeepSeek API wrapper.
-- No custom-agent configuration that silently falls back to an OpenAI worker.
+- Codex 0.146.1 does not accept third-party providers in built-in `spawn_agent`, so dsbro uses the official `codex mcp-server` worker surface.
+- Each worker call has a Codex-native one-hour MCP timeout.
 
 ## Commands
 
