@@ -1,6 +1,6 @@
 ---
 name: deepseek-worker
-description: Delegate implementation work to DeepSeek V4 Flash through an OpenAI-compatible Chat Completions API, then have Codex review, apply, and test the returned patch. Use when the user says "用 DeepSeek 当小弟", asks to enable DeepSeek as the default worker for a project, explicitly requests DeepSeek delegation, or when a project AGENTS.md activates this skill for implementation tasks.
+description: Delegate implementation work to DeepSeek V4 Flash through an OpenAI-compatible Chat Completions API, then have Codex review, apply, and test the returned patch. Use when the user says "dsbro" (case-insensitive), uses the legacy phrase "用 DeepSeek 当小弟", asks to enable DeepSeek as the default worker for a project, explicitly requests DeepSeek delegation, or when a project AGENTS.md activates this skill for implementation tasks.
 ---
 
 # DeepSeek Worker
@@ -9,7 +9,7 @@ Use DeepSeek only as a remote implementation worker. Codex retains local reposit
 
 ## Enable project mode
 
-When the user says `用 DeepSeek 当小弟` without a task:
+When the user sends `dsbro` as a standalone command (case-insensitive), or uses the legacy phrase `用 DeepSeek 当小弟`, without a task:
 
 1. Find the applicable project-root `AGENTS.md`, or create it if absent.
 2. Add or update exactly one managed block:

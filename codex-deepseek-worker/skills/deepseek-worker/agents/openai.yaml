@@ -1,4 +1,4 @@
 interface:
   display_name: "DeepSeek Worker"
   short_description: "Delegate coding tasks to DeepSeek V4 Flash"
-  default_prompt: "Use $deepseek-worker to delegate implementation to DeepSeek and verify the result."
+  default_prompt: "dsbro"

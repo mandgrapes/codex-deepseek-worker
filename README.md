@@ -24,10 +24,10 @@ powershell -ExecutionPolicy Bypass -File .\install.ps1
 
 安装器会自动检查 GitHub CLI、登录并下载私有仓库、注册插件市场、安装插件，以及弹出安全的 API Key 输入窗口。除首次 GitHub 网页授权和 API Key 外，不需要手动填写配置；模型固定为 `deepseek-v4-flash`。
 
-重启 Codex 后，在项目中说：
+重启 Codex 后，在项目中输入：
 
-> 用 DeepSeek 当小弟
+> dsbro
 
-之后该项目的实现任务默认考虑交给 DeepSeek，最终修改仍由 Codex 验收。
+`dsbro` 不区分大小写。之后该项目的实现任务默认考虑交给 DeepSeek，最终修改仍由 Codex 验收。旧口令“用 DeepSeek 当小弟”仍可使用。
 
 详细设计见 [CODEX_DEEPSEEK_PLUGIN_MVP.md](CODEX_DEEPSEEK_PLUGIN_MVP.md)。

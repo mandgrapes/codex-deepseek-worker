@@ -64,8 +64,8 @@
    codex plugin list
    ```
 
-9. 告诉用户重启 Codex、开启新对话，然后说：
+9. 告诉用户重启 Codex、开启新对话，然后输入：
 
-   > 用 DeepSeek 当小弟
+   > dsbro
 
 不要读取、回显、记录或提交用户的 API Key。

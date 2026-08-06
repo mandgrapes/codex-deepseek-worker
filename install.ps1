@@ -229,4 +229,4 @@ if ([string]::IsNullOrWhiteSpace([Environment]::GetEnvironmentVariable("DEEPSEEK
 }
 
 Write-Host "Installation complete." -ForegroundColor Green
-Write-Host "Restart Codex, open a new thread, and say: Use DeepSeek as my worker."
+Write-Host "Restart Codex, open a new thread, and enter: dsbro"
