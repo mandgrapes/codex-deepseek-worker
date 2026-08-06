@@ -23,6 +23,7 @@ When the user sends `dsbro` as a standalone command:
 Use `$codex-deepseek-worker:deepseek-worker` as the default worker for implementation and debugging. The parent Codex agent delegates work to a DeepSeek V4 Flash Codex thread, reviews the actual diff, and runs relevant verification.
 
 Keep routine delegation silent. Report actual changes, verification, blockers, and risks; do not recite the workflow unless asked.
+While the DeepSeek worker process is running, keep waiting. Latency or temporary silence is not failure and must not trigger parent takeover.
 <!-- dsbro:end -->
 ```
 
@@ -39,6 +40,15 @@ Invoke the launcher from this skill directory. Pass the parent session's current
 ```
 
 Long tasks may use `-TaskFile`. The launcher prints `DSBRO_SESSION_ID=<uuid>`; retain that ID for follow-ups during the task.
+
+## Wait for the worker
+
+- A running launcher process means the DeepSeek worker still owns the delegated task.
+- If the command yields a running process or cell identifier, wait for it repeatedly in short intervals supported by the host. Do not impose a total time limit.
+- Temporary lack of model output is normal. Give the user a brief status update when appropriate, then continue waiting.
+- While it is running, do not implement the same task in the parent, start an OpenAI fallback worker, or make overlapping edits.
+- Parent takeover is allowed only after the launcher has definitely exited with failure, the user cancels it, or the user explicitly asks Codex to take over.
+- After successful completion, the parent resumes its normal review and verification role.
 
 ## Continue the same worker
 

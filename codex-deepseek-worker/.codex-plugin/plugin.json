@@ -1,6 +1,6 @@
 {
   "name": "codex-deepseek-worker",
-  "version": "0.1.0+codex.20260806175623",
+  "version": "0.1.0+codex.20260806181728",
   "description": "Run DeepSeek V4 Flash in a persistent, resumable Codex worker thread under Codex supervision.",
   "author": {
     "name": "Local developer"

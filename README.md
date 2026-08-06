@@ -26,6 +26,8 @@ dsbro
 
 After that, make normal implementation requests. Routine worker handoffs remain quiet.
 
+If a DeepSeek worker takes a long time, Codex keeps waiting while its process is alive. Silence or latency alone does not trigger parent takeover; Codex takes over only after a confirmed failure, cancellation, or an explicit user request.
+
 To update:
 
 ```text

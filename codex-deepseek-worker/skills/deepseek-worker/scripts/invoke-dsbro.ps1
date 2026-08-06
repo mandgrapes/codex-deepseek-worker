@@ -89,6 +89,7 @@ if (-not [string]::IsNullOrWhiteSpace($OutputFile)) {
 $arguments += @("--", $workerPrompt)
 
 $capturedEvents = [Collections.Generic.List[string]]::new()
+Write-Output '{"type":"dsbro.worker","status":"running","model":"deepseek-v4-flash"}'
 & $codex.Source @arguments | ForEach-Object {
     $line = [string]$_
     $capturedEvents.Add($line)
