@@ -10,7 +10,7 @@ Codex 0.146.1 currently rejects third-party models in its built-in `spawn_agent`
 
 ## Install on Windows
 
-Give [`给Codex安装.md`](给Codex安装.md) to Codex on the target machine, or run:
+Run from the repository root:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\install.ps1
