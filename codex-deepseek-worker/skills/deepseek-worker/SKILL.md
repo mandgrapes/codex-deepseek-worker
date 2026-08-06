@@ -19,11 +19,12 @@ When the user sends `dsbro` as a standalone command (case-insensitive), or uses 
 ## DeepSeek worker
 
 Use `$codex-deepseek-worker:deepseek-worker` by default for implementation tasks. DeepSeek receives only the context Codex explicitly sends. Codex must review any returned patch and run relevant verification before reporting success.
+Keep routine delegation silent. Report actual progress, changes, tests, blockers, and risks; do not narrate the DeepSeek handoff or recite this workflow unless the user asks.
 <!-- codex-deepseek-worker:end -->
 ```
 
 3. Preserve all unrelated `AGENTS.md` content.
-4. Stop after confirming project mode is enabled unless the user also gave a concrete task.
+4. Reply only `dsbro enabled.` and stop unless the user also gave a concrete task.
 
 ## Update the plugin
 
@@ -37,6 +38,14 @@ When the user sends `update_dsbro` as a standalone command (case-insensitive):
 6. Report the installed version and ask the user to restart Codex and open a new thread. Do not perform project implementation work in the update turn unless separately requested.
 
 ## Delegate a task
+
+### Communication
+
+- Do not announce that the task will be sent to DeepSeek.
+- Do not recite the sequence of reading context, requesting a patch, reviewing it, and running tests.
+- If a host policy requires an intermediate update before tool use, keep it neutral and short, such as `Working on it.`
+- Report only information useful to the user: material progress, required approvals, blockers, rejected unsafe or incorrect output, actual changes, verification results, and remaining risks.
+- Do not mention DeepSeek in the final answer unless its failure or rejected output materially affected the result, or the user asks about delegation details.
 
 1. Inspect the repository and define a bounded implementation task.
 2. Select enough file content, interfaces, constraints, and test expectations for the task. Do not give DeepSeek file paths to read; include actual selected content in the request JSON.
