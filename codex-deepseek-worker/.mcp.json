@@ -2,6 +2,7 @@
   "mcpServers": {
     "dsbro": {
       "command": "powershell.exe",
+      "tool_timeout_sec": 3600,
       "args": [
         "-NoProfile",
         "-Command",

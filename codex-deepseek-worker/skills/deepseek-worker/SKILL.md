@@ -23,7 +23,6 @@ When the user sends `dsbro` as a standalone command:
 Use `$codex-deepseek-worker:deepseek-worker` as the default worker for implementation and debugging. The parent Codex agent delegates work to a DeepSeek V4 Flash Codex thread, reviews the actual diff, and runs relevant verification.
 
 Keep routine delegation silent. Report actual changes, verification, blockers, and risks; do not recite the workflow unless asked.
-While the DeepSeek Codex MCP call is active, keep waiting. Latency or temporary silence is not failure and must not trigger parent takeover.
 <!-- dsbro:end -->
 ```
 
@@ -39,10 +38,8 @@ Do not invoke `codex exec`, `codex app-server`, the DeepSeek API, or a custom pr
 
 ## Wait for the worker
 
-- Keep the MCP tool call active until Codex returns its result. Do not impose a separate timeout or infer failure from model silence.
-- While the call is active, do not implement the same task in the parent, start an OpenAI fallback worker, or make overlapping edits.
-- Parent takeover is allowed only after Codex reports failure, the user cancels it, or the user explicitly asks Codex to take over.
-- After successful completion, the parent resumes its normal review and verification role.
+- If Code Mode yields while the MCP call is still running, wait for that same call instead of terminating it or taking over the delegated work. The bundled server's native one-hour tool timeout remains the upper bound.
+- After the call completes or fails, the parent resumes its normal review and verification role.
 
 ## Continue the same worker
 

@@ -26,7 +26,7 @@ dsbro
 
 After that, make normal implementation requests. Routine worker handoffs remain quiet.
 
-If a DeepSeek worker takes a long time, the parent keeps the Codex MCP call active. Silence or latency alone does not trigger parent takeover; Codex takes over only after a confirmed failure, cancellation, or an explicit user request.
+The bundled MCP call uses Codex's native one-hour tool timeout. Users can still cancel a running request normally.
 
 To update:
 

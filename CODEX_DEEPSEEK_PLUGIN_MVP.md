@@ -27,6 +27,7 @@ Codex 0.146.1 validates `spawn_agent` models against an OpenAI allowlist and rej
 - Main Codex model/provider: unchanged.
 - API key: Windows user environment, never Git or TOML.
 - Communication: routine handoffs stay quiet.
+- Worker timeout: Codex-native MCP `tool_timeout_sec = 3600`.
 
 ## Removed routes
 
