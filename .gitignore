@@ -15,8 +15,3 @@ deepseek-response*.json
 Thumbs.db
 .vscode/
 .idea/
-
-# Local verification material
-deepseek-official-setup.ps1
-dsbro-ml-test/
-dsbro-ml-hard-test/
