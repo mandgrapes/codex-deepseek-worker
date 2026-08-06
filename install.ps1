@@ -121,10 +121,10 @@ function Install-NativeCodexConfiguration {
 
     $catalogDestination = Join-Path $codexDirectory "dsbro-models.json"
     Copy-Item -LiteralPath $catalogSource -Destination $catalogDestination -Force
-    Get-Content -LiteralPath $catalogDestination -Raw | ConvertFrom-Json | Out-Null
+    Get-Content -LiteralPath $catalogDestination -Raw -Encoding UTF8 | ConvertFrom-Json | Out-Null
 
     $configPath = Join-Path $codexDirectory "config.toml"
-    $config = if (Test-Path -LiteralPath $configPath) { Get-Content -LiteralPath $configPath -Raw } else { "" }
+    $config = if (Test-Path -LiteralPath $configPath) { Get-Content -LiteralPath $configPath -Raw -Encoding UTF8 } else { "" }
     if ($null -eq $config) { $config = "" }
 
     $config = [regex]::Replace($config, '(?ms)^\s*# dsbro-provider:start\s*$.*?^\s*# dsbro-provider:end\s*\r?\n?', '')
