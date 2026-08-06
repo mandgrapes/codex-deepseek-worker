@@ -1,30 +1,41 @@
-# dsbro v2: native DeepSeek sub-agent
+# dsbro: DeepSeek Codex worker thread
 
 ## Goal
 
-One command, `dsbro`, makes `deepseek-v4-flash` the default implementation worker for the current Codex project. Codex remains the parent agent and owns review and verification.
+`dsbro` makes `deepseek-v4-flash` the default implementation worker for a project. The current Codex session remains the supervisor and owns review and verification.
 
 ## Architecture
 
-1. The installer adds a custom `deepseek` provider to the user's Codex configuration. It uses `wire_api = "responses"` and reads `DEEPSEEK_API_KEY` from the Windows user environment.
-2. The installer writes `~/.codex/dsbro-models.json` with the official DeepSeek V4 Flash tool and context metadata.
-3. `dsbro` copies a project custom agent to `.codex/agents/worker.toml`.
-4. Codex gives custom agents precedence over built-in agents with the same name, so the project's native `worker` runs on DeepSeek.
-5. The parent Codex agent delegates bounded work, reviews the actual repository diff, and runs relevant tests.
+1. The installer adds `[model_providers.deepseek]` using the Responses API and environment-key authentication.
+2. It installs DeepSeek's official V4 Flash Codex model metadata at `~/.codex/dsbro-models.json`.
+3. The plugin starts a normal persisted `codex exec` session with the DeepSeek provider and returns its session ID.
+4. The worker reads and edits the project using Codex tools and the selected sandbox.
+5. Follow-ups resume the same local session, preserving the worker's context.
+6. The parent Codex agent reviews the real diff and independently runs tests.
 
-## Deliberate constraints
+## State model
 
-- Only `deepseek-v4-flash` is configured.
-- The main Codex model/provider is never replaced.
-- Activation is per project.
-- The API key is not written to Git or TOML.
-- Routine delegation is silent.
+DeepSeek's Responses API is stateless on the server: it does not support `previous_response_id` or a hosted conversation object. Codex provides the state by storing its thread locally and replaying the required history when the session is resumed. The worker is therefore persistent from the user's and parent's perspective.
 
-## What v1 removed
+## Built-in router boundary
 
-The Chat Completions wrapper, request JSON format, selected-context upload, structured patch response, and patch-application script are gone. DeepSeek now participates through Codex's own agent runtime and tools.
+Codex 0.146.1 validates `spawn_agent` models against an OpenAI allowlist and rejects `deepseek-v4-flash`, even from a custom-agent TOML. dsbro uses a child Codex thread to avoid fallback while retaining Codex tools, prompts, context, session history, and sandboxing.
+
+## Constraints
+
+- DeepSeek model: `deepseek-v4-flash`.
+- Main Codex model/provider: unchanged.
+- API key: Windows user environment, never Git or TOML.
+- Communication: routine handoffs stay quiet.
+
+## Removed routes
+
+- No Chat Completions patch wrapper.
+- No selected-snippet request serialization.
+- No ephemeral-only lifecycle.
+- No custom-agent configuration that silently falls back to an OpenAI worker.
 
 ## Commands
 
-- `dsbro`: enable the native worker in the current project.
-- `update_dsbro`: pull, reinstall, and refresh configuration.
+- `dsbro`: persist project activation in `AGENTS.md`.
+- `update_dsbro`: pull, reinstall, and refresh local configuration.

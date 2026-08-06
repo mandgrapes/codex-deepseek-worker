@@ -1,7 +1,7 @@
 <!-- dsbro:start -->
 ## dsbro
 
-For implementation and debugging work, delegate a well-bounded task to the `worker` sub-agent by default. The worker is project-configured to use DeepSeek V4 Flash. The parent Codex agent must review the resulting diff and run relevant tests before reporting success.
+Use `$codex-deepseek-worker:deepseek-worker` as the default worker for implementation and debugging. The parent Codex agent delegates work to a DeepSeek V4 Flash Codex thread, reviews the actual diff, and runs relevant verification.
 
-Keep delegation silent. Report only useful progress, actual changes, verification results, blockers, and risks. Do not recite the delegation workflow unless asked.
+Keep routine delegation silent. Report actual changes, verification, blockers, and risks; do not recite the workflow unless asked.
 <!-- dsbro:end -->

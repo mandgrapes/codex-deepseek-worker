@@ -1,62 +1,71 @@
 ---
 name: deepseek-worker
-description: Enable or update dsbro, a project-scoped native Codex worker powered by DeepSeek V4 Flash through the Responses API. Use when the user says "dsbro", "update_dsbro", asks to use DeepSeek as a Codex sub-agent, or when a project AGENTS.md activates dsbro for implementation work.
+description: Enable, use, or update dsbro, a Codex worker thread powered by DeepSeek V4 Flash through the Responses API. Use when the user says "dsbro", "update_dsbro", asks to use DeepSeek as a coding worker, or when a project AGENTS.md activates dsbro for implementation work.
 ---
 
 # dsbro
 
-`dsbro` is native Codex multi-agent orchestration. The parent Codex agent remains in charge. A project-scoped custom agent named `worker` uses `deepseek-v4-flash` through DeepSeek's Responses API and works with Codex's normal repository tools and inherited sandbox.
+`dsbro` runs `deepseek-v4-flash` in a normal Codex coding session. It gets the Codex agent prompt, project instructions, repository tools, patch tool, shell, sandbox, and local conversation history. The parent Codex session delegates, reviews, and accepts the work.
+
+DeepSeek's Responses endpoint does not store server-side conversations, but Codex stores the worker thread locally. Resume calls reconstruct the conversation, so the worker can receive test failures, corrections, and follow-up tasks just like a continuing agent thread.
 
 ## Enable a project
 
 When the user sends `dsbro` as a standalone command:
 
-1. Locate the project root.
-2. Create `.codex/agents/` if needed.
-3. Copy `../../assets/worker.toml` from this skill's directory to `.codex/agents/worker.toml`, replacing an older dsbro worker file.
-4. Add or replace exactly one managed block in the project-root `AGENTS.md`:
+1. Locate the project-root `AGENTS.md`, creating it if absent.
+2. Add or replace exactly one managed block:
 
 ```markdown
 <!-- dsbro:start -->
 ## dsbro
 
-For implementation and debugging work, delegate a well-bounded task to the `worker` sub-agent by default. The worker is project-configured to use DeepSeek V4 Flash. The parent Codex agent must review the resulting diff and run relevant tests before reporting success.
+Use `$codex-deepseek-worker:deepseek-worker` as the default worker for implementation and debugging. The parent Codex agent delegates work to a DeepSeek V4 Flash Codex thread, reviews the actual diff, and runs relevant verification.
 
-Keep delegation silent. Report only useful progress, actual changes, verification results, blockers, and risks. Do not recite the delegation workflow unless asked.
+Keep routine delegation silent. Report actual changes, verification, blockers, and risks; do not recite the workflow unless asked.
 <!-- dsbro:end -->
 ```
 
-5. Remove the obsolete `codex-deepseek-worker` managed block if present.
-6. Preserve unrelated `AGENTS.md` content.
-7. Reply only `dsbro enabled.` unless a concrete task was also supplied.
+3. Remove obsolete dsbro managed blocks and `.codex/agents/worker.toml` left by the abandoned custom-agent experiment.
+4. Preserve unrelated `AGENTS.md` content.
+5. Reply only `dsbro enabled.` unless a concrete task was also supplied.
 
-Project custom-agent files are loaded at session start. If dsbro was just enabled, tell the user to open a new Codex thread before expecting the DeepSeek worker to be selected.
+## Start a worker thread
 
-## Work in an enabled project
+Invoke the launcher from this skill directory. Pass the parent session's current sandbox mode when known:
 
-- Use Codex's native sub-agent mechanism and select the project custom agent named `worker` for bounded implementation or debugging tasks.
-- Give the worker a clear objective, acceptance criteria, and relevant constraints. It can inspect the repository and use local tools itself; do not serialize source files into an API request.
-- The parent Codex agent owns architectural decisions, reviews all changes, runs appropriate verification, and fixes or rejects weak output.
-- Parallel workers are optional. Avoid overlapping write scopes.
-- Keep routine handoff narration silent.
-- Never expose API keys in prompts, logs, files, or responses.
+```powershell
+& ".\scripts\invoke-dsbro.ps1" -ProjectRoot "<project-root>" -Task "<task>" -SandboxMode workspace-write
+```
+
+Long tasks may use `-TaskFile`. The launcher prints `DSBRO_SESSION_ID=<uuid>`; retain that ID for follow-ups during the task.
+
+## Continue the same worker
+
+Send test failures, review comments, or the next instruction back to the same thread:
+
+```powershell
+& ".\scripts\invoke-dsbro.ps1" -ProjectRoot "<project-root>" -SessionId "<uuid>" -Task "<follow-up>"
+```
+
+Start separate worker threads when normal Codex orchestration would use separate subagents. Do not overlap write scopes. After worker changes, the parent inspects the real diff and independently verifies the result. Keep API keys out of prompts, files, logs, and responses.
+
+Current Codex 0.146.1 rejects third-party models inside the built-in `spawn_agent` router. Therefore the launcher uses a child Codex thread rather than silently falling back to an OpenAI worker. Apart from that router boundary, the worker uses the Codex runtime and model metadata directly.
 
 ## Update dsbro
 
 When the user sends `update_dsbro` as a standalone command:
 
 1. Use `%LOCALAPPDATA%\Codex\marketplaces\codex-deepseek-worker`.
-2. If absent, clone `https://github.com/mandgrapes/codex-deepseek-worker.git` there. If present, verify its origin matches that repository and pull with `--ff-only`.
-3. Run its `install.ps1`. The installer preserves an existing API key and refreshes the native provider, model catalog, plugin, and worker template.
-4. Verify the plugin is installed and enabled.
+2. If absent, clone `https://github.com/mandgrapes/codex-deepseek-worker.git` there. If present, verify its origin and pull with `--ff-only`.
+3. Run its `install.ps1`. It preserves the API key and refreshes the provider, official Flash model metadata, launcher, and plugin.
+4. Verify `codex-deepseek-worker@codex-deepseek-worker` is installed and enabled.
 5. Report the installed version and ask the user to restart Codex and open a new thread.
 
-## Configuration contract
+## Configuration
 
-The installer owns these local pieces:
-
-- `DEEPSEEK_API_KEY` in the Windows user environment.
-- A managed `[model_providers.deepseek]` block in `~/.codex/config.toml` using `wire_api = "responses"` and `env_key = "DEEPSEEK_API_KEY"`.
-- `~/.codex/dsbro-models.json`, containing only `deepseek-v4-flash` metadata.
-
-The parent session's default model and provider are deliberately left unchanged.
+- Model: `deepseek-v4-flash` only.
+- Protocol: Responses API.
+- Credential: `DEEPSEEK_API_KEY` from the Windows user environment.
+- Model catalog: `~/.codex/dsbro-models.json` from DeepSeek's official Codex setup.
+- The parent Codex model/provider is unchanged.
