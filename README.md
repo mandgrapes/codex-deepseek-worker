@@ -6,15 +6,17 @@ DeepSeek API 不会直接访问本地文件、终端或完整仓库。它只能�
 
 ## 在另一台 Windows 机器安装
 
-先安装并登录 GitHub CLI，然后执行：
+只需要把 [`install.ps1`](install.ps1) 给那台机器上的 Codex，然后说：
+
+> 读取并运行这个安装文件。需要授权时让我按回车，API Key 由我自己输入。
+
+Codex 执行：
 
 ```powershell
-codex plugin marketplace add mandgrapes/codex-deepseek-worker
-codex plugin add codex-deepseek-worker@codex-deepseek-worker
-git clone https://github.com/mandgrapes/codex-deepseek-worker.git
-cd codex-deepseek-worker
-.\setup-deepseek-worker.ps1
+powershell -ExecutionPolicy Bypass -File .\install.ps1
 ```
+
+安装器会自动检查 GitHub CLI、登录并下载私有仓库、注册插件市场、安装插件，以及弹出安全的 API Key 输入窗口。除首次 GitHub 网页授权和 API Key 外，不需要手动填写配置；模型固定为 `deepseek-v4-flash`。
 
 重启 Codex 后，在项目中说：
 
@@ -23,4 +25,3 @@ cd codex-deepseek-worker
 之后该项目的实现任务默认考虑交给 DeepSeek，最终修改仍由 Codex 验收。
 
 详细设计见 [CODEX_DEEPSEEK_PLUGIN_MVP.md](CODEX_DEEPSEEK_PLUGIN_MVP.md)。
-
