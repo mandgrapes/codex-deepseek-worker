@@ -123,6 +123,15 @@ function Install-NativeCodexConfiguration {
     Copy-Item -LiteralPath $catalogSource -Destination $catalogDestination -Force
     Get-Content -LiteralPath $catalogDestination -Raw -Encoding UTF8 | ConvertFrom-Json | Out-Null
 
+    $obsoleteProfilePath = Join-Path $codexDirectory "dsbro.config.toml"
+    if (Test-Path -LiteralPath $obsoleteProfilePath) {
+        $obsoleteProfile = Get-Content -LiteralPath $obsoleteProfilePath -Raw -Encoding UTF8
+        if ($obsoleteProfile -match '(?m)^model\s*=\s*"deepseek-v4-flash"\s*$' -and
+            $obsoleteProfile -match '(?m)^model_provider\s*=\s*"deepseek"\s*$') {
+            Remove-Item -LiteralPath $obsoleteProfilePath -Force
+        }
+    }
+
     $configPath = Join-Path $codexDirectory "config.toml"
     $config = if (Test-Path -LiteralPath $configPath) { Get-Content -LiteralPath $configPath -Raw -Encoding UTF8 } else { "" }
     if ($null -eq $config) { $config = "" }
